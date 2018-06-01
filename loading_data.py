@@ -17,5 +17,3 @@ with open(file_path) as f:
     data = json.load(f)
 
 df = pd.DataFrame.from_dict(json_normalize(data), orient='columns')
-
-
