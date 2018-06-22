@@ -33,9 +33,11 @@ The descriptions, as said, are written by wine experts and are thus filled with 
 
 _Aromas include tropical fruit, broom, brimstone and dried herb. The palate isn't overly expressive, offering unripened apple, citrus and dried sage alongside brisk acidity._
 
-
+Our first guess is that the usage of specific adjectives already tells a lot about the amount of points a wine might get. Therefore, we will be working with different Natural Language Processing methods to be able to classify these different reviews.
 
 ## Preprocessing
+
+
 
 ## Compute Content Words
 
