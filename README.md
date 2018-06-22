@@ -37,7 +37,19 @@ Our first guess is that the usage of specific adjectives already tells a lot abo
 
 ## Preprocessing
 
+Lets start with how we loaded and preprocessed the data before we move on to the actual classifying. 
 
+The data was provided in a .json format, which makes it very easy to load the data by making use of pandas DataFrames:
+
+```python
+file_path = "data/winemag-data-130k-v2.json"
+
+with open(file_path) as f:
+    data = json.load(f)
+    dataset = pd.DataFrame.from_dict(json_normalize(data), orient='columns')
+
+descriptions = dataset['description'].tolist()
+```
 
 ## Compute Content Words
 
