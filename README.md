@@ -201,6 +201,8 @@ As we will try to classify the label of a description instead of the actual scor
 
 ![winemag labels][labels]
 
+There are 7 labels, but winemag.com does not publish reviews with a score below 80.
+
 ```python
 scores = dataset['points'].tolist()
 ```
@@ -246,7 +248,34 @@ dataset['labels'] = labels
 
 ## Compute BoW Corpus
 
+The final step we need to perform before we filter and split the dataset into training and test is to compute the Bag-of-Word corpus.
+
+```python
+def createCorpus(tokens):
+    corpus = []
+    for token_list in tqdm(tokens):
+        content_tokens = []
+        for token in token_list:
+            if token not in content_counts:
+                continue
+            else:
+                content_tokens.append(token)
+        doc = " ".join(content_tokens)
+        corpus.append(doc)
+    return corpus
+```
+
+```python
+corpus = createCorpus(tokens)
+bag_of_words_vectorizer = CountVectorizer(min_df=2)
+bow_feature_vector = bag_of_words_vectorizer.fit_transform(corpus)
+```
+
+We first create a string of each review by joining the individual content words. Then we store all these strings inside a list which we then fit to a CountVectorizer. Important thing to note is that we use fit_transform on the entire corpus. When we split the data into training and test we will use only fit(). As the vectorizer is already prepared with the entire dataset. 
+
 ## Data Filtering
+
+
 
 ## Data Splitting
 
