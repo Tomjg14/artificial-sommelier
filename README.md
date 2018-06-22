@@ -444,10 +444,80 @@ The best parameter settings were: {'kernel': 'rbf', 'gamma': 0.02, 'C': 5}.
 
 ## Obtain BoW Features
 
+The first experiment we would like to run with the SVM is by feeding it Bag-of-word feature vectors of the dataset. Here we show how we obtain these feature vectors.
+
+```python
+train_tokens = trainset['tokens'].tolist()
+train_corpus = createCorpus(train_tokens)
+train_features = bag_of_words_vectorizer.transform(train_corpus)
+```
+
+```python
+test_tokens = testset['tokens'].tolist()
+test_corpus = createCorpus(test_tokens)
+test_features = bag_of_words_vectorizer.transform(test_corpus)
+```
+
+We create the feature vectors by making use of the earlier mentioned vectorizer on which the entire dataset was fit. The output format is a csr matrix which can be fed to a SVM.
+
 ## Obtain LDA Features
+
+Another experiment we would like to run includes defining feature vectors based on a topic distribution. This topic distribution is obtained by making use of the Latent Dirichlet Allocation algorithm. This algorithm is fed a corpus with documents/texts and is told how many topics are to be expected and then computes which terms belong to which topic. After training, a new/old document can be given to the lda model, which will then compute the topic distribution for that specific document. This is just a list of probabilities per topic. these lists can be viewed as feature vectors and be fed to a SVM.
+
+```python
+def createCorpusLDA(tokens):
+    dictionary = corpora.Dictionary(tokens)
+    corpus = [dictionary.doc2bow(token_list) for token_list in tokens]
+    return (dictionary,corpus)
+```
+
+First we train the LDA model on the entire dataset. We perform just one pass in order to reduce running time and set the minimum probability to 0.01. This means that a topic needs to be represented for >= 1% in a document for it to be assigned that topic. The number of topics is set to 100.
+
+```python
+tokens = dataset['tokens'].tolist()
+(dictionary,corpus2) = createCorpus2(tokens)
+
+start = datetime.now()
+print(start)
+ldamodel = gensim.models.ldamodel.LdaModel(corpus2, num_topics=100, id2word = dictionary, passes=1, minimum_probability=0.01)
+end = datetime.now()
+print(end)
+
+pickle.dump(ldamodel,open("lda_model.p","wb"))
+```
+
+Next we create the training and test feature vectors.
+
+```python
+train_lda_dictionary, train_lda_corpus = createCorpusLDA(train_tokens)
+
+train_lda_features = dok_matrix((len(train_lda_corpus),100))
+
+for i in tqdm(range(len(train_lda_corpus))):
+    topic_distribution = lda_model[train_lda_corpus[i]]
+    for (topic_nr,prob) in topic_distribution:
+        train_lda_features[i, topic_nr] = prob
+        
+train_lda_features_csr = train_lda_features.tocsr()
+```
+
+```python
+test_lda_dictionary, test_lda_corpus = createCorpusLDA(test_tokens)
+
+test_lda_features = dok_matrix((len(test_lda_corpus),100))
+
+for i in tqdm(range(len(test_lda_corpus))):
+    topic_distribution = lda_model[test_lda_corpus[i]]
+    for (topic_nr,prob) in topic_distribution:
+        test_lda_features[i, topic_nr] = prob
+        
+test_lda_features_csr = test_lda_features.tocsr()
+```
 
 ## Obtain W2V Features
 
 ## Obtain GLOVE Features
 
 ## Results
+
+Our results and conclusions can be read in our project report.
