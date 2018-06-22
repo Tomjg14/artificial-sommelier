@@ -275,11 +275,94 @@ We first create a string of each review by joining the individual content words.
 
 ## Data Filtering
 
+Like Hendrikx et al. we will be filtering out certain reviews. We filter based on the number of reviews per wine. The threshold is set to 200. 
 
+```python
+varieties = dataset['variety'].tolist()
+wine_count = Counter(varieties)
+nr_reviews = len(varieties)
+threshold = 200
+```
+
+```python
+filtered_keys = []
+for key, item in wine_count.items():
+    if item < threshold:
+        filtered_keys.append(key)
+```
+
+```python
+idx = 0
+indices = []
+for v in varieties:
+    if v in filtered_keys:
+        indices.append(idx)
+    idx += 1
+```
+
+```python
+dataset_filtered = dataset.drop(dataset.index[indices]).copy()
+dataset_filtered = dataset_filtered.reset_index()
+
+print("New Total reviews: %s"%(len(dataset_filtered)))
+```
+
+After filtering, we are left with 118263 reviews.
 
 ## Data Splitting
 
+Next we split the data into a training and test set. We decided to turn 80% into training and 20% into test and we try to balance both sets on the different wines. 
+
+```python
+wines = np.unique(dataset_filtered['variety'].tolist())
+```
+
+We create a dictionary with the different wines as keys and there indices in the dataset as values.
+
+```python
+wine_indices = {}
+for wine in wines:
+    indices = dataset_filtered.index[dataset_filtered['variety'] == wine].tolist()
+    wine_indices[wine] = indices
+```
+
+Then we use this dictionary to decide which dataset indices will go to the trainingset and which will go to the testset.
+
+```python
+train_indices = {}
+test_indices = {}
+for wine in wines:
+    indices = wine_indices[wine]
+    nr_indices = len(indices)
+    train_indices[wine] = indices[:round(nr_indices*0.8)]
+    test_indices[wine] = indices[round(nr_indices*0.8):]
+    
+    nr_train_indices = len(indices[:round(nr_indices*0.8)])
+    nr_test_indices = len(indices[round(nr_indices*0.8):])
+```
+
+Finally, as we worked per wine we need to put all training and test indices into one big list. This list can then we used to copy a subset of the original dataset.
+
+```python
+tr_indices = []
+for _, indices in train_indices.items():
+    tr_indices = tr_indices + indices
+```
+
+```python
+t_indices = []
+for _, indices in test_indices.items():
+    t_indices = t_indices + indices
+```
+
+```python
+trainset = dataset_filtered.iloc[tr_indices,:].copy()
+testset = dataset_filtered.iloc[t_indices,:].copy()
+```
+
 ## Define SVM
+
+
 
 ## Perform Grid Search
 
