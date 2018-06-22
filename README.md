@@ -22,3 +22,29 @@ This blog has the following structure:
 * [Results](#results)
 
 <a name="hendrikx-footnote">1</a>: [Hendrickx et al.](http://www.aclweb.org/anthology/P16-2050)
+
+## The Data
+
+## Preprocessing
+
+## Compute Content Words
+
+## Compute Labels
+
+## Compute BoW Corpus
+
+## Data Filtering
+
+## Data Splitting
+
+## Define SVM
+
+## Obtain BoW Features
+
+## Obtain LDA Features
+
+## Obtain W2V Features
+
+## Obtain GLOVE Features
+
+## Results
