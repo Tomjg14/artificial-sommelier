@@ -21,4 +21,4 @@ This blog has the following structure:
 * [Obtain GLOVE Features](#obtain-glove-features)
 * [Results](#results)
 
-<a name="hendrikx-footnote">1</a>: http://www.aclweb.org/anthology/P16-2050
+<a name="hendrikx-footnote">1</a>: [Hendrickx et al.](http://www.aclweb.org/anthology/P16-2050)
