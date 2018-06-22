@@ -42,6 +42,10 @@ Lets start with how we loaded and preprocessed the data before we move on to the
 The data was provided in a .json format, which makes it very easy to load the data by making use of pandas DataFrames:
 
 ```python
+from pandas.io.json import json_normalize
+import json
+import pandas as pd
+
 file_path = "data/winemag-data-130k-v2.json"
 
 with open(file_path) as f:
@@ -50,6 +54,70 @@ with open(file_path) as f:
 
 descriptions = dataset['description'].tolist()
 ```
+
+Next we start by computing the Part-of-Speech tags per word in the dataset. This is needed as we want to reproduce the work by Hendrikx et al. as closely as possible and in their work they filter on content words (nouns, verbs, adjectives). Therefore, before we split the data or remove any terms from the reviews, we first need to perform pos-tagging. Luckily there exist libraries for this:
+
+```python
+import nltk
+from tqdm import tqdm_notebook as tqdm
+
+def retrievePOS(descriptions):
+    tags = []
+    for description in tqdm(descriptions):
+        text = nltk.word_tokenize(description)
+        pos_tags = nltk.pos_tag(text)
+        pos_dict = {}
+        for (word,pos) in pos_tags:
+            pos_dict[word.lower()] = pos
+            tags.append(pos_dict)
+    return tags
+    
+tags = retrievePOS(descriptions)
+```
+
+Now we can start with the actual preprocessing:
+
+```python
+def hasNumbers(inputString):
+    return any(char.isdigit() for char in inputString)
+
+def getTokens(descriptions):
+    dataset_tokens = []
+    dataset_pos_tags = []
+    for description in tqdm(descriptions):
+        # tokenize
+        description_tokens = nltk.word_tokenize(description)
+        # remove tokens with length of 1 and digits
+        description_tokens = [t for t in description_tokens if len(t) > 1 and not hasNumbers(t)]
+        # compute part-of-speech tags
+        pos = nltk.pos_tag(description_tokens)
+        tokens = []
+        pos_tags = []
+        stop_words = set(stopwords.words('english'))
+        for (word,pos_tag) in pos:
+            if not word.lower() in stop_words:
+                tokens.append(word.lower())
+                pos_tags.append(pos_tag)
+            dataset_tokens.append(tokens)
+            dataset_pos_tags.append(pos_tags)
+        return dataset_tokens, dataset_pos_tags
+
+tokens, pos_tags = getTokens(descriptions)
+
+dataset['tokens'] = tokens
+dataset['pos_tags'] = pos_tags
+```
+
+First we tokenize the reviews to obtain a list of words and then we remove words of length 1 or that contain digits. After this cleaning we start with the part of speech tagging. Finally, we remove stop words and make every word lowercase.
+
+To skip this step in the future, we make use of pickle to save variables.
+
+```python
+pickle.dump(tokens,open("tokens.p","wb"))
+pickle.dump(pos_tags,open("pos_tags.p","wb"))
+```
+
+This were all the preprocessing steps we performed on the actual reviews. Next sections will explain how we filter each review on content words, how we turn the continuous points into one of six labels and how we compute the Bag-of-word Corpus for the entire dataset.
 
 ## Compute Content Words
 
