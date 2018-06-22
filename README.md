@@ -362,9 +362,85 @@ testset = dataset_filtered.iloc[t_indices,:].copy()
 
 ## Define SVM
 
+We will be working with a Support Vector Machine to classify the different reviews. This section provides the different methods used and the parameter settings we used for our SVM. These settings were obtained by performing grid search, which we will explain in more detail in the following section. Just like Hendrikx et al. we made use of the RBF kernel instead of a linear one.
 
+![rbf_kernel][rbf]
+
+```python
+def classify(train_features,train_labels,test_features):
+    clf = SVC(kernel='rbf', C=5, gamma=0.02, verbose=True)
+    clf.fit(train_features, train_labels)
+    print("\ndone fitting classifier\n")
+    return clf.predict(test_features)
+```
+
+```python
+def evaluate(y_true,y_pred):
+    recall = sklearn.metrics.recall_score(y_true, y_pred, average='macro')
+    print("Recall: %f" % recall)
+
+    precision = sklearn.metrics.precision_score(y_true, y_pred, average='macro')
+    print("Precision: %f" % precision)
+
+    f1_score = sklearn.metrics.f1_score(y_true, y_pred, average='macro')
+    print("F1-score: %f" % f1_score)
+
+    return recall, precision, f1_score
+```
+
+```python
+def main(train_features,train_data,test_features,test_data):
+    train_labels = train_data['labels'].tolist()
+
+    test_labels = test_data['labels'].tolist()
+        
+    y_pred = classify(train_features,train_labels,test_features)
+        
+    recall, precision, f1_score = evaluate(test_labels, y_pred)
+    
+    print("recall: %s"%(recall))
+    print("precision: %s"%(precision))
+    print("f1 score: %s"%(f1_score))
+    
+    return recall, precision, f1_score
+```
+
+In order to evaluate the performance of our SVM we are using f1-score. F1-score takes both recall and precision into consideration.
+
+[rbf]: https://github.com/Tomjg14/artificial-sommelier/blob/master/images/svm_rbf.JPG 'svm with rbf kernel'
 
 ## Perform Grid Search
+
+To figure out the optimal parameter settings for our SVM we decided to perform Grid Search. This is a method were the user specifies different parameter settings and where the classifier is tested for the amount of possible parameter combinations to figure out the most optimal setting.
+
+```python
+random_sample = trainset.sample(5000)
+```
+
+```python
+random_tokens = random_sample['tokens'].tolist()
+random_corpus = createCorpus(random_tokens)
+```
+
+```python
+random_features = bag_of_words_vectorizer.transform(random_corpus)
+random_labels = random_sample['labels'].tolist()
+```
+
+As we did not have that much time left until the deadline, we decided on the following parameters to reduce running time:
+
+```python
+parameters = {'kernel':['rbf'], 'C': np.arange(1,40,2), 'gamma': np.linspace(0.0, 0.2, 11)}
+```
+
+```python
+svc = SVC()
+clf = GridSearchCV(svc, parameters, verbose=10, n_jobs=4)
+clf.fit(random_features,random_labels)
+params = clf.best_params_
+```
+
+The best parameter settings were: {'kernel': 'rbf', 'gamma': 0.02, 'C': 5}.
 
 ## Obtain BoW Features
 
