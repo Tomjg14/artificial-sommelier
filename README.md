@@ -516,8 +516,171 @@ test_lda_features_csr = test_lda_features.tocsr()
 
 ## Obtain W2V Features
 
+To create the Word2Vec feature vectors, we had to perform several steps. First we had to train our own word embeddings making use of the word2vec library. Then to stick to the work of Hendrikx et al. we had to perform KMeans clustering on the word embeddings. The resulting clusters could then be used to compute the feature vectors.
+
+First lets see how we trained our own word embeddings:
+
+```python
+vector_dimension = 200
+context_size = 8
+sentences = dataset['content_tokens'].tolist()
+```
+
+```python
+# sentences = lijst content woorden voor fitten van W2V model
+# workers = aantal threads voor trainen W2V (hangt af van aantal cores van PC)
+# sg = 1 voor skip-gram (beter low-freq words), 0 voor CBOW (sneller, beter voor high-freq words)
+# For full documentation see https://radimrehurek.com/gensim/models/word2vec.html
+model = Word2Vec(sentences,size=vector_dimension,window=context_size,workers=4,min_count=2,sg=1)
+```
+
+We decided on skip-gram as the dataset contained a lot of low frequency words.
+
+Next the KMeans clustering:
+
+```python
+NR_CLUSTERS = 100
+kmeans = cluster.KMeans(n_clusters=NR_CLUSTERS)
+X = model[model.wv.vocab]
+kmeans.fit(X)
+labels = kmeans.labels_
+centroids = kmeans.cluster_centers_
+pickle.dump(labels,open("w2v_labels.p","wb"))
+```
+
+Now that we have the different clusters, we can start creating feature vectors:
+
+```python
+NR_TRAIN_REVIEWS = len(train_tokens)
+NR_TEST_REVIEWS = len(test_tokens)
+
+train_w2v_features = dok_matrix((NR_TRAIN_REVIEWS,100))
+test_w2v_features = dok_matrix((NR_TEST_REVIEWS,100))
+
+content_tokens = dataset['content_tokens'].tolist()
+
+for i in tqdm(range(NR_TRAIN_REVIEWS)):
+    content_token_list = content_tokens[i]
+    for content_token in content_token_list:
+        content_index = content_word_dict[content_token]
+        cluster_id = w2v_labels[content_index]
+        train_w2v_features[i, cluster_id] = 1
+        
+for i in tqdm(range(NR_TEST_REVIEWS)):
+    content_token_list = content_tokens[i]
+    for content_token in content_token_list:
+        content_index = content_word_dict[content_token]
+        cluster_id = w2v_labels[content_index]
+        test_w2v_features[i, cluster_id] = 1
+        
+train_w2v_features_csr = train_w2v_features.tocsr()
+test_w2v_features_csr = test_w2v_features.tocsr()
+```
+
 ## Obtain GLOVE Features
+
+Creating the GLOVE feature vectors is done quite similar to that of the w2v feature vectors. But this time instead of training or own word embeddings, we could simply load the GLOVE ones. 
+
+```python
+# Load embedding and return a directory of words mapped to the vectors in NumPy format
+# Set header true if there is a header
+def load_embedding(filename,header):
+    # Load embedding into memory and skip first line (which is a header)
+    file = open(filename,'r', encoding="utf8")
+    if header:
+        lines = file.readlines()[1:]
+    else:
+        lines = file.readlines()
+    
+    file.close()
+    
+    # Create map of words to vectors
+    embedding = dict()
+    for line in lines:
+        parts = line.split()
+        # Key is string word, value is numpy array for vector
+        embedding[parts[0]] = asarray(parts[1:],dtype='float32')
+    return embedding
+
+# Create a weight matrix for the embedding layer from a loaded embedding
+# Glove is to be True when using the GloVe data; words are skipped that do
+# not have a corresponding vector in the GloVe data
+def get_weight_matrix(embedding,vocabulary,glove):
+    # Total vocabulary size plus 0 for unknown words
+    vocabulary_size = len(vocabulary)
+    
+    # Define weight matrix dimensions with all 0
+    weight_matrix = zeros((vocabulary_size,200))
+    
+    counter = 0
+    
+    # Step vocabulary, store vectors using Tokenizers integer mapping
+    for i, word in enumerate(vocabulary):
+        if glove:
+            vector = embedding.get(word)
+            if vector is None:
+                counter += 1
+            if vector is not None:
+                weight_matrix[i] = vector
+        else:
+            weight_matrix[i] = embedding.get(word)
+    
+    print(counter)
+    
+    return weight_matrix
+```
+
+```python
+raw_embedding = load_embedding('data/glove.6B.200d.txt',False)
+
+# Glove set to True (Skips words that aren't in GloVe data)
+embedding_matrix = get_weight_matrix(raw_embedding,words,True)
+```
+
+Again we perform KMeans clustering:
+
+```python
+NR_CLUSTERS = 100
+kmeans = cluster.KMeans(n_clusters=NR_CLUSTERS)
+X = embedding_matrix
+kmeans.fit(X)
+labels = kmeans.labels_
+centroids = kmeans.cluster_centers_
+pickle.dump(labels,open("glove_labels.p","wb"))
+```
+
+And we can compute the feature vectors:
+
+```python
+NR_TRAIN_REVIEWS = len(train_tokens)
+NR_TEST_REVIEWS = len(test_tokens)
+
+train_glove_features = dok_matrix((NR_TRAIN_REVIEWS,100))
+test_glove_features = dok_matrix((NR_TEST_REVIEWS,100))
+
+content_tokens = dataset['content_tokens'].tolist()
+
+for i in tqdm(range(NR_TRAIN_REVIEWS)):
+    content_token_list = content_tokens[i]
+    for content_token in content_token_list:
+        content_index = content_word_dict[content_token]
+        cluster_id = glove_labels[content_index]
+        train_glove_features[i, cluster_id] = 1
+
+for i in tqdm(range(NR_TEST_REVIEWS)):
+    content_token_list = content_tokens[i]
+    for content_token in content_token_list:
+        content_index = content_word_dict[content_token]
+        cluster_id = glove_labels[content_index]
+        test_glove_features[i, cluster_id] = 1
+        
+train_glove_features_csr = train_glove_features.tocsr()
+test_glove_features_csr = test_glove_features.tocsr()
+```
+
+An important note on the feature vectors. The word embedding feature vectors are binary, meaning that if a word in the review belongs to a certain cluster. Then this position in the feature vector is set to 1 otherwise its 0. The LDA feature vector contains values between 0-1 as its a probability distribution. Finally, the BoW feature vectors contains the term count. So if a content word is mentioned multiple times in the same text it can have a value higher than 1.
 
 ## Results
 
 Our results and conclusions can be read in our project report.
+This concludes this blog on our work with the wine review dataset.
