@@ -15,6 +15,7 @@ This blog has the following structure:
 * [Data Filtering](#data-filtering)
 * [Data Splitting](#data-splitting)
 * [Define SVM](#define-svm)
+* [Perform Grid Search](#perform-grid-search)
 * [Obtain BoW Features](#obtain-bow-features)
 * [Obtain LDA Features](#obtain-lda-features)
 * [Obtain W2V Features](#obtain-w2v-features)
@@ -78,6 +79,8 @@ tags = retrievePOS(descriptions)
 Now we can start with the actual preprocessing:
 
 ```python
+from nltk.corpus import stopwords
+
 def hasNumbers(inputString):
     return any(char.isdigit() for char in inputString)
 
@@ -113,6 +116,8 @@ First we tokenize the reviews to obtain a list of words and then we remove words
 To skip this step in the future, we make use of pickle to save variables.
 
 ```python
+import pickle
+
 pickle.dump(tokens,open("tokens.p","wb"))
 pickle.dump(pos_tags,open("pos_tags.p","wb"))
 ```
@@ -120,6 +125,75 @@ pickle.dump(pos_tags,open("pos_tags.p","wb"))
 This were all the preprocessing steps we performed on the actual reviews. Next sections will explain how we filter each review on content words, how we turn the continuous points into one of six labels and how we compute the Bag-of-word Corpus for the entire dataset.
 
 ## Compute Content Words
+
+Hendrikx et al. defined content words as either nouns, verbs or adjectives. So it seems as if we should filter on those three labels. However, when we performed the pos-tagging we worked with the Standford NLTK library which makes use of way more labels then just these three. Therefore we worked with the following code:
+
+```python
+def isContentWord(pos_tag):
+    content_tags = ["JJ", "JJR", "JJS", "NN", "NNP", "NNS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"]
+    if pos_tag in content_tags:
+        return True
+    else:
+        return False
+```
+
+By making use of this custom function we can determine if a certain word has one of many content-word labels. This way only content words are kept.
+
+```python
+content_words = []
+for i, token_list in enumerate(tokens):
+    pos_tag_list = pos_tags[i]
+    for j, word in enumerate(token_list):
+        pos_tag = pos_tag_list[j]
+        if isContentWord(pos_tag):
+            content_words.append(word)
+```
+
+We then use a Counter to count how many times each content word occurred in the dataset.
+
+```python
+content_counts = Counter(content_words)
+```
+
+Next we filter on content words that have more than 2 occurrences in the dataset. This is different from Hendrikx et al. as they filtered on more than 1 occurrences. We decided on more than 2 to reduce the total amount of content words, something that was necessary to decrease the size of our feature vectors and to fasten training time.
+
+```python
+filtered_content_words = []
+for word in tqdm(content_words):
+    if content_counts[word] > 2:
+        if not word in filtered_content_words:
+            filtered_content_words.append(word)
+```
+
+```python
+CONTENT_COUNT = len(np.unique(filtered_content_words))
+```
+
+Here we initialize a dictionary where each content word is a key and its value is an unique index that will help to create the Bag-of-words feature vector.
+
+```python
+content_word_dict = {}
+for i, word in enumerate(filtered_content_words):
+    content_word_dict[word] = i
+```
+
+Finally, go over all reviews and only keep the content words.
+
+```python
+content_tokens = []
+for token_list in tqdm(tokens):
+    filtered_tokens = []
+    for token in token_list:
+        if token in content_word_dict:
+            filtered_tokens.append(token)
+    content_tokens.append(filtered_tokens)
+```
+
+Each new review (only containing content words) are then appended to the entire dataset.
+
+```python
+dataset['content_tokens'] = content_tokens
+```
 
 ## Compute Labels
 
@@ -130,6 +204,8 @@ This were all the preprocessing steps we performed on the actual reviews. Next s
 ## Data Splitting
 
 ## Define SVM
+
+## Perform Grid Search
 
 ## Obtain BoW Features
 
