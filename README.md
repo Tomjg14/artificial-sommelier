@@ -197,6 +197,53 @@ dataset['content_tokens'] = content_tokens
 
 ## Compute Labels
 
+As we will try to classify the label of a description instead of the actual score, we first need to convert these scores into categories. Luckily, winemag.com had their own labels. 
+
+![winemag labels][labels]
+
+```python
+scores = dataset['points'].tolist()
+```
+
+```python
+def getCategory(scores):
+    category_string = []
+    category_int = []
+    for score in scores:
+        score = int(score)
+        if score < 80:
+            category_string.append("unacceptable")
+            category_int.append(0)
+        elif score >= 80 and score <= 82:
+            category_string.append("acceptable")
+            category_int.append(1)
+        elif score >= 83 and score <= 86:
+            category_string.append("good")
+            category_int.append(2)
+        elif score >= 87 and score <= 89:
+            category_string.append("very good")
+            category_int.append(3)
+        elif score >= 90 and score <= 93:
+            category_string.append("excellent")
+            category_int.append(4)
+        elif score >= 94 and score <= 97:
+            category_string.append("superb")
+            category_int.append(5)
+        elif score >= 98 and score <= 100:
+            category_string.append("classic")
+            category_int.append(6)
+    return category_string, category_int
+```
+
+```python
+categories, labels = getCategory(scores)
+
+dataset['category'] = categories
+dataset['labels'] = labels
+```
+
+[labels]: https://github.com/Tomjg14/artificial-sommelier/blob/master/images/labels.JPG 'winemag logos'
+
 ## Compute BoW Corpus
 
 ## Data Filtering
