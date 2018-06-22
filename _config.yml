@@ -1,2 +1,16 @@
 theme: jekyll-theme-minimal
+name: Artificial Sommelier
+authors:
+  Max:
+    name: Max Moons
+    display_name: Max
+    email: 
+    github:
+  Tom:
+    name: Tom Janssen Groesbeek
+    display_name: Tom
+    email: tomjg@hotmail.nl
+    github: Tomjg14
+bio: This is a project for the course Cognitive Computational Modeling of Language and Web Interaction from the Radboud University (Nijmegen). The goal of this project was to reproduce the work by Hendrickx et al. (2016) but give it our own twist. We were mostly interested in trying to predict the score for a specific wine given an experts review.
 picture: 'images/wine-logo.jpg'
+
