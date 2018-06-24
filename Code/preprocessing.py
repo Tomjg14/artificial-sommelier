@@ -1,4 +1,4 @@
-# data loading\n
+# data loading
 from pandas.io.json import json_normalize
 import json
 import pandas as pd
@@ -19,7 +19,7 @@ from scipy.sparse import dok_matrix
 
 # computations
 import numpy as np
-import math\n
+import math
 from numpy import asarray
 from numpy import zeros
 from keras.utils import np_utils
