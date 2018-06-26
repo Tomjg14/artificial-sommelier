@@ -682,5 +682,8 @@ An important note on the feature vectors. The word embedding feature vectors are
 
 ## Results
 
-Our results and conclusions can be read in our project report.
+Our results and conclusions can be read in our project report:
+
+[Report](https://github.com/Tomjg14/artificial-sommelier/blob/master/Automatic_Scoring_Let_Support_Vector_Machines_Taste_Wine.pdf)
+
 This concludes this blog on our work with the wine review dataset.
