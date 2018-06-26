@@ -364,7 +364,7 @@ testset = dataset_filtered.iloc[t_indices,:].copy()
 
 We will be working with a Support Vector Machine to classify the different reviews. This section provides the different methods used and the parameter settings we used for our SVM. These settings were obtained by performing grid search, which we will explain in more detail in the following section. Just like Hendrikx et al. we made use of the RBF kernel instead of a linear one.
 
-![rbf_kernel][rbf]
+![rbf_kernel](https://github.com/Tomjg14/artificial-sommelier/blob/master/images/svm_rbf.JPG 'svm with rbf kernel')
 
 ```python
 def classify(train_features,train_labels,test_features):
@@ -406,8 +406,6 @@ def main(train_features,train_data,test_features,test_data):
 ```
 
 In order to evaluate the performance of our SVM we are using f1-score. F1-score takes both recall and precision into consideration.
-
-[rbf]: https://github.com/Tomjg14/artificial-sommelier/blob/master/images/svm_rbf.JPG 'svm with rbf kernel'
 
 ## Perform Grid Search
 
